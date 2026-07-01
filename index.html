@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ICS 歐洲行隨身助手</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ICS助手">
+    <meta name="theme-color" content="#2C3E50">
+    
+    <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22ICS%20%E6%AD%90%E6%B4%B2%E8%A1%8C%E9%9A%A8%E8%BA%AB%E5%8A%A9%E6%89%8B%22%2C%22short_name%22%3A%22ICS%E5%8A%A9%E6%89%8B%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F4F6F8%22%2C%22theme_color%22%3A%22%232C3E50%22%2C%22orientation%22%3A%22portrait%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Butf8%2C%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27100%27%20fill%3D%27%233498DB%27%2F%3E%3Cpath%20d%3D%27M256%20100%20L380%20380%20L132%20380%20Z%27%20fill%3D%27%23FFF%27%2F%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+    
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%233498DB'/><path d='M256 100 L380 380 L132 380 Z' fill='%23FFF'/></svg>">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-main: #F4F6F8;
+            --bg-card: #FFFFFF;
+            --text-main: #2C3E50;
+            --text-sub: #7F8C8D;
+            --border-color: #E2E8F0;
+            --accent-green: #2ECC71; 
+            --accent-blue: #3498DB;
+            --accent-orange: #E67E22; 
+            --admin-color: #E74C3C;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; }
+
+        .phone-container {
+            width: 100%; max-width: 480px; background: var(--bg-main); min-height: 100vh;
+            display: flex; flex-direction: column; position: relative; padding-bottom: calc(75px + var(--safe-bottom));
+        }
+
+        header {
+            background-color: var(--bg-card); padding: 20px 16px 12px 16px; border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header-title { font-size: 1.2rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+        .header-subtitle { font-size: 0.75rem; color: var(--text-sub); margin-top: 4px; display: flex; justify-content: space-between; }
+        
+        .btn-toggle-admin {
+            background: none; border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 12px;
+            font-size: 0.75rem; color: var(--text-sub); cursor: pointer; font-weight: bold;
+        }
+        .admin-mode-active .btn-toggle-admin { background-color: var(--admin-color); color: white; border-color: var(--admin-color); }
+        .admin-banner { display: none; background-color: var(--admin-color); color: white; text-align: center; font-size: 0.75rem; padding: 6px; font-weight: bold; }
+        .admin-mode-active .admin-banner { display: block; }
+
+        /* 日期導覽滾動條 */
+        .day-scroller { display: flex; overflow-x: auto; padding: 12px 16px; gap: 8px; scrollbar-width: none; }
+        .day-scroller::-webkit-scrollbar { display: none; }
+        .day-badge { flex: 0 0 auto; padding: 8px 14px; background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 20px; font-size: 0.8rem; color: var(--text-sub); cursor: pointer; font-weight: 600; }
+        .day-badge.active { background-color: var(--text-main); color: #FFF; border-color: var(--text-main); }
+
+        .content-section { display: none; padding: 0 16px; }
+        .content-section.active { display: block; }
+
+        /* 天氣看板 */
+        .weather-banner { background: linear-gradient(135deg, #34495E, #2C3E50); color: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .weather-temp { font-size: 1.6rem; font-weight: 700; }
+        .weather-desc { font-size: 0.8rem; opacity: 0.9; }
+
+        /* 卡片系統 */
+        .card { background-color: var(--bg-card); border-radius: 14px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .card-time { font-size: 0.85rem; font-weight: bold; color: var(--accent-blue); background: #EBF5FB; padding: 2px 8px; border-radius: 6px; }
+        .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 6px; color: var(--text-main); }
+        .card-meta { font-size: 0.8rem; color: var(--text-sub); line-height: 1.5; white-space: pre-line; }
+        .btn-nav { display: inline-flex; align-items: center; gap: 6px; background-color: #F8FAFC; border: 1px solid var(--border-color); padding: 8px; border-radius: 10px; font-size: 0.75rem; color: var(--text-main); text-decoration: none; width: 100%; justify-content: center; margin-top: 8px; font-weight: bold; }
+
+        /* 後台欄位 */
+        .admin-input, .admin-textarea, .admin-select { display: none; width: 100%; margin-bottom: 8px; padding: 8px; border: 1px solid #CBD5E1; border-radius: 8px; font-size: 0.85rem; }
+        .admin-delete-btn { display: none; background-color: var(--admin-color); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; cursor: pointer; margin-top: 4px; }
+        .btn-add-card { display: none; width: 100%; background: none; border: 2px dashed var(--admin-color); color: var(--admin-color); padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 25px; }
+
+        .admin-mode-active .view-field { display: none !important; }
+        .admin-mode-active .admin-input, .admin-mode-active .admin-textarea, .admin-mode-active .admin-select, .admin-mode-active .admin-delete-btn, .admin-mode-active .btn-add-card { display: block; }
+
+        /* 行李清單 */
+        .luggage-cat { font-size: 0.95rem; font-weight: bold; margin: 16px 0 8px 0; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+        .luggage-item { background: white; padding: 12px; border-radius: 10px; display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; border: 1px solid var(--border-color); font-size: 0.85rem; }
+        .luggage-checkbox { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--accent-green); }
+
+        /* 記帳拆帳 */
+        .bill-input-group { display: flex; gap: 6px; margin-bottom: 10px; }
+        .bill-btn { background-color: var(--accent-blue); color: white; border: none; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+        .bill-summary { background: #EAFAF1; border: 1px solid #A3E4D7; color: #196F3D; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 0.85rem; }
+        .debt-report { background: #FEF9E7; border: 1px solid #F9E79F; color: #7D6608; padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.6; }
+        .user-tag-container { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+        .user-tag { background: #E2E8F0; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 6px; }
+        .user-tag i { color: #E74C3C; cursor: pointer; }
+        .split-checkboxes { display: flex; flex-wrap: wrap; gap: 10px; padding: 6px; background: #F8FAFC; border-radius: 6px; margin-top: 4px; }
+        
+        /* 匯率區樣式 */
+        .rate-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
+        .rate-box { background: #F1F5F9; padding: 6px; border-radius: 6px; text-align: center; font-size: 0.75rem; }
+        .rate-box input { width: 100%; border: 1px solid var(--border-color); text-align: center; border-radius: 4px; margin-top: 2px; font-size: 0.75rem; padding: 2px; }
+
+        /* 底部導覽 */
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background-color: rgba(255, 255, 255, 0.96); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 10px 0 calc(6px + var(--safe-bottom)) 0; z-index: 1000; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-sub); font-size: 0.65rem; text-decoration: none; cursor: pointer; width: 20%; font-weight: bold; }
+        .nav-item i { font-size: 1.3rem; margin-bottom: 4px; }
+        .nav-item.active { color: var(--accent-blue); }
+    </style>
+</head>
+<body>
+
+<div class="phone-container" id="mainContainer">
+    <div class="admin-banner"><i class="fa-solid fa-screwdriver-wrench"></i> 行程與重要資訊後台管理模式</div>
+
+    <header>
+        <div class="header-title">
+            <span>ICS 歐洲行程助手</span>
+            <button class="btn-toggle-admin" onclick="toggleAdminMode()">
+                <i class="fa-solid fa-lock"></i> <span id="adminBtnText">管理後台</span>
+            </button>
+        </div>
+        <div class="header-subtitle">
+            <span>7/2 - 7/12 完整隨身本</span>
+            <span style="color:var(--accent-blue); font-weight:bold;">PWA 智慧多幣值版</span>
+        </div>
+    </header>
+
+    <div class="day-scroller" id="dayScroller">
+        <div class="day-badge active" onclick="switchDay('7/2')">7/2 (四)</div>
+        <div class="day-badge" onclick="switchDay('7/3')">7/3 (五)</div>
+        <div class="day-badge" onclick="switchDay('7/4')">7/4 (六)</div>
+        <div class="day-badge" onclick="switchDay('7/5')">7/5 (日)</div>
+        <div class="day-badge" onclick="switchDay('7/6')">7/6 (一)</div>
+        <div class="day-badge" onclick="switchDay('7/7')">7/7 (二)</div>
+        <div class="day-badge" onclick="switchDay('7/8')">7/8 (三)</div>
+        <div class="day-badge" onclick="switchDay('7/9')">7/9 (四)</div>
+        <div class="day-badge" onclick="switchDay('7/10')">7/10 (五)</div>
+        <div class="day-badge" onclick="switchDay('7/11')">7/11 (六)</div>
+        <div class="day-badge" onclick="switchDay('7/12')">7/12 (日)</div>
+    </div>
+
+    <div id="sec-itinerary" class="content-section active">
+        <div class="weather-banner view-field">
+            <div>
+                <div style="font-size:0.85rem; opacity:0.8;" id="weather-city">天氣讀取中...</div>
+                <div class="weather-temp" id="weather-temp">--°C</div>
+            </div>
+            <div style="text-align: right;">
+                <div id="weather-icon" style="font-size: 1.8rem; margin-bottom: 2px;"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                <div class="weather-desc" id="weather-desc">分析經緯度...</div>
+            </div>
+        </div>
+        <div id="itinerary-cards-container"></div>
+        <button class="btn-add-card" onclick="addItineraryCard()">+ 在當天新增自訂行程</button>
+    </div>
+
+    <div id="sec-info" class="content-section">
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-plane-departure"></i> 航班訊息與轉機備忘</div>
+            <div class="view-field card-meta" id="info-flight-view"></div>
+            <textarea class="admin-textarea" id="info-flight-edit" style="height: 180px;" oninput="saveInfoData('flight')"></textarea>
+        </div>
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-hotel"></i> 住宿飯店資訊</div>
+            <div class="view-field card-meta" id="info-stay-view"></div>
+            <textarea class="admin-textarea" id="info-stay-edit" style="height: 150px;" oninput="saveInfoData('stay')"></textarea>
+        </div>
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-bolt"></i> 歐洲生活與緊急備忘</div>
+            <div class="view-field card-meta" id="info-life-view"></div>
+            <textarea class="admin-textarea" id="info-life-edit" style="height: 150px;" oninput="saveInfoData('life')"></textarea>
+        </div>
+    </div>
+
+    <div id="sec-luggage" class="content-section">
+        <div class="card" style="background:#EBF5FB; border-color:#AED6F1; font-size:0.8rem; color:#2C3E50;">
+            <i class="fa-solid fa-circle-info"></i> <b>隨身行李重要限制：</b><br>行動電源必須有明確 Wh 標示，最多攜帶兩顆，且須用密封袋加絕緣膠帶單獨包裝放置於隨身行李，不可託運。
+        </div>
+        <div id="luggage-container"></div>
+    </div>
+
+    <div id="sec-food" class="content-section">
+        <div id="food-cards-container"></div>
+        <button class="btn-add-card" onclick="addFoodCard()">+ 新增美食餐廳</button>
+    </div>
+
+    <div id="sec-budget" class="content-section">
+        <div class="card" style="border-left: 4px solid var(--accent-orange);">
+            <div class="card-title" style="font-size:0.9rem;"><i class="fa-solid fa-money-bill-trend-up"></i> 匯率基準設定 (折算為歐元 EUR)</div>
+            <div class="rate-grid">
+                <div class="rate-box">1 EUR 兌台幣<input type="number" id="rate-twd" value="35.5" step="0.1" oninput="renderBudget()"></div>
+                <div class="rate-box">1 EUR 兌韓元<input type="number" id="rate-krw" value="1450" step="10" oninput="renderBudget()"></div>
+                <div class="rate-box">1 EUR 兌美金<input type="number" id="rate-usd" value="1.08" step="0.01" oninput="renderBudget()"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-users"></i> 1. 成員名單管理</div>
+            <div class="bill-input-group">
+                <input type="text" id="new-user-name" class="admin-input" style="display:block;" placeholder="請輸入成員名字 (如：賴教授)">
+                <button class="bill-btn" onclick="addUser()">添加</button>
+            </div>
+            <div class="user-tag-container" id="user-tags"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-file-invoice-dollar"></i> 2. 新增一筆消費支出</div>
+            <div class="bill-input-group">
+                <input type="text" id="bill-purpose" class="admin-input" style="display:block;" placeholder="項目 (如: 計程車、晚餐)">
+                <input type="number" id="bill-amount" class="admin-input" style="display:block; width:110px;" placeholder="金額">
+                <select id="bill-currency" class="admin-select" style="display:block; width:85px; margin-bottom:0;">
+                    <option value="EUR">EUR 歐元</option>
+                    <option value="TWD">TWD 台幣</option>
+                    <option value="KRW">KRW 韓元</option>
+                    <option value="USD">USD 美金</option>
+                </select>
+            </div>
+            <div style="font-size:0.8rem; margin-bottom:4px; font-weight:bold;">付款人：</div>
+            <select id="bill-payer" class="admin-select" style="display:block; margin-bottom:10px;"></select>
+            
+            <div style="font-size:0.8rem; margin-bottom:4px; font-weight:bold;">分攤成員：</div>
+            <div class="split-checkboxes" id="bill-targets"></div>
+            
+            <button class="bill-btn" style="width:100%; margin-top:12px; background-color:var(--accent-green);" onclick="addBill()">加入帳目</button>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-calculator"></i> 3. 智慧分帳結算結果</div>
+            <div class="debt-report" id="debt-report-box">請先於上方添加成員與消費帳目。</div>
+            <div class="bill-summary" id="bill-total-box">總花費累計：€0.00 EUR</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-list-ol"></i> 4. 歷史帳目明細</div>
+            <div id="bill-history-list" style="font-size:0.85rem;"></div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('itinerary', this)">
+            <i class="fa-solid fa-calendar-days"></i><span>行程助手</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('info', this)">
+            <i class="fa-solid fa-circle-info"></i><span>重要資訊</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('luggage', this)">
+            <i class="fa-solid fa-suitcase"></i><span>行李清單</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('food', this)">
+            <i class="fa-solid fa-utensils"></i><span>精選美食</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('budget', this)">
+            <i class="fa-solid fa-money-bill-transfer"></i><span>預算分帳</span>
+        </div>
+    </nav>
+</div>
+
+<script>
+    // 注入 Service Worker 實現真正的離線 PWA 機制
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            const swCode = `
+                const CACHE_NAME = 'ics-v2-cache-2026';
+                const urlsToCache = [location.href, 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'];
+                self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache))); });
+                self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match(location.href)))); });
+            `;
+            const blob = new Blob([swCode], { type: 'text/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(err => console.log(err));
+        });
+    }
+
+    // 原始核心行程與清單數據庫
+    const defaultItinerary = [
+        { day: '7/2', time: '14:00', title: '前往桃機第一航廈', desc: '交通方式: 包車 | 車程時間: 2小時', nav: '' },
+        { day: '7/2', time: '16:00', title: '抵達桃機第一航廈辦理登機', desc: '備註: 韓國 e-Arrival Card 請於入境前 72 小時內填寫完成。', nav: '' },
+        { day: '7/2', time: '18:55', title: '大韓航空 KE 2028 起飛', desc: '台北桃園 (TPE) T1 → 首爾仁川 (ICN) T2\n航行時間：2小時40分鐘，附晚餐。', nav: '' },
+        { day: '7/2', time: '22:55', title: '抵達首爾仁川第二航廈', desc: '備註: 完成入境手續，並辦理 SeS 自動通關。夜間於機場內休息(汗蒸幕)。', nav: '' },
+        { day: '7/3', time: '08:40', title: '首爾仁川第二航廈辦理再次報到', desc: '開啟 ICN Smart Pass App 登錄登機證，刷臉快速通關。', nav: '' },
+        { day: '7/3', time: '10:40', title: '大韓航空 KE 0937 起飛', desc: '首爾仁川 (ICN) T2 → 維也納 (VIE) T3\n航行時間：12小時40分鐘，附午餐與晚餐。', nav: '' },
+        { day: '7/3', time: '16:20', title: '抵達維也納第三航廈', desc: '備註: 完成護照查驗，並辦理 EES 歐洲入出境系統登錄。', nav: '' },
+        { day: '7/3', time: '19:10', title: '搭乘 Flixbus 前往 Bratislava', desc: '交通方式: Flixbus | 時間: 55分鐘 | 價格: USD 131.91\n備註: 機場的巴士停靠在 P3 臨時停車場附近。', nav: 'Vienna Airport Bus Station P3' },
+        { day: '7/3', time: '20:05', title: '入住 Cozy Old Town attic apartment', desc: '交通方式: 步行 8 分鐘。地址：29. augusta 2276/23, 81109 Bratislava\n備註: 密碼鑰匙盒自助入住。', nav: '29. augusta 2276/23, 81109 Bratislava' },
+        { day: '7/4', time: '全天', title: '自由行程 / 會場勘查', desc: '目前暫無既定行程，可透過後台自行添加。', nav: '' },
+        { day: '7/5', time: '全天', title: '自由行程 / 論文微調預備', desc: '目前暫無既定行程，可透過後台自行添加。', nav: '' },
+        { day: '7/6', time: '全天', title: 'Slovak National Theatre 學術會議', desc: '備註: 核心技術發表與學術交流。', nav: 'Slovak National Theatre' },
+        { day: '7/6', time: '16:45', title: '🎤 Chian-Hui Lai Oral Presentation', desc: '重頭戲發表時刻！請提早至會場測試投影與簡報設備。', nav: '' },
+        { day: '7/7', time: '15:30', title: '📊 Poster Session (15:30-17:30)', desc: '現場海報展示與各國學術專家自由交流。', nav: '' },
+        { day: '7/8', time: '全天', title: '學術會議 Day 3', desc: '目前暫無既定行程，可透過後台自行添加。', nav: '' },
+        { day: '7/9', time: '全天', title: '學術會議 Day 4', desc: '目前暫無既定行程，可透過後台自行添加。', nav: '' },
+        { day: '7/10', time: '全天', title: '會議結束 / 準備啟程返航', desc: '目前暫無既定行程，可透過後台自行添加。', nav: '' },
+        { day: '7/11', time: '全天', title: '經維也納與仁川轉機', desc: '回程跨國航班與過境中。', nav: '' },
+        { day: '7/12', time: '全天', title: '返抵台北桃園國際機場', desc: '結束本次歐洲學術發表行程！', nav: '' }
+    ];
+
+    const defaultInfo = {
+        flight: `🛫 去程航班資料：\n1. 7/2 大韓航空 KE 2028 (18:55 TPE - 22:55 ICN)\n- 轉機等待時間：12小時05分鐘\n2. 7/3 大韓航空 KE 0937 (10:40 ICN - 16:20 VIE)\n\n💼 行李限額明細：\n- 手提行李：1件 + 1件個人隨身物品 (總計不超過 10 公斤)\n- 託運行計：1件 (重量不超過 23 公斤)`,
+        stay: `🏢 斯洛伐克住宿：\n- Cozy Old Town attic apartment\n- 地址：29. augusta 2276/23, 81109 Bratislava - Staré Mesto\n- 入住：15:00 之後 (出發前48小時會提供密碼鑰匙盒密碼)\n- 退房：11:00 之前\n- 周邊公車站：Culenova 站、29.Augusta 站`,
+        life: `⚡ 歐洲生活實用備忘：\n- 斯洛伐克電壓：230V / 50Hz (歐規雙圓孔插座)\n- 韓國電壓：220V / 60Hz (韓規雙圓孔插座)\n- 飲水提示：斯洛伐克自來生水可直接飲用。\n- 韓國退稅門檻：滿 ₩15,000 可辦理退稅。\n- 歐洲緊急救難電話：112\n- 駐斯洛伐克台北代表處：+421-2-5825-3220`
+    };
+
+    const luggageData = {
+        '重要文件': ['護照正本 + 電子檔 + 影本 (效期>6個月)', '韓國 e-Arrival Card 填寫檔案', '完成 ICN Smart Pass App 資料登錄', '機票確認單電子檔', '飯店訂房確認單', '英文旅行保險證明單', '身分證、健保卡', '信用卡、歐元現金、韓幣現金、少量台幣', '歐洲上網卡/SIM卡/取卡針', 'Flixbus 巴士確認單', '大會學術發表海報'],
+        '3C電子設備': ['手機', '行動電源 (必須帶隨身、有Wh標示)', '耳機、藍芽耳機', '各大充電線、高速充電器', '萬國轉接插頭 (歐規圓孔)', '平板電腦/電子書閱讀器', '輕便延長線', '相機、記憶卡、相機充電器'],
+        '個人常備藥品': ['個人私用常備藥', '普拿疼 (解熱鎮痛)', '暈車藥/暈船藥', '感冒藥/綜合維他命', '腸胃藥/益生菌', '護眼藥水', 'OK蹦/外傷消毒藥膏', '棉花棒、牙籤']
+    };
+
+    const defaultFood = [
+        { title: '1. Bratislava Flagship Restaurant', desc: '由古老劇院改建的歐洲最大餐廳之一，極具木質復古風情。', tag1: '推薦：羊奶起司馬鈴薯麵疙瘩、香蒜奶油濃湯', nav: 'Námestie SNP 8, 811 02 Bratislava' },
+        { title: '2. Slovak Pub', desc: '坐落於商業街 Obchodná 上，價格非常親民、份量驚人。', tag1: '推薦：斯洛伐克傳統綜合大拼盤、麵包碗大蒜湯', nav: 'Obchodná 62, 811 06 Bratislava' }
+    ];
+
+    let itineraryData = JSON.parse(localStorage.getItem('ics_v2_iti')) || defaultItinerary;
+    let infoData = JSON.parse(localStorage.getItem('ics_v2_info')) || defaultInfo;
+    let foodData = JSON.parse(localStorage.getItem('ics_v2_food')) || defaultFood;
+    let userList = JSON.parse(localStorage.getItem('ics_v2_users')) || ['賴教授', '研究員A', '研究員B'];
+    let billList = JSON.parse(localStorage.getItem('ics_v2_bills')) || [];
+    let currentDay = '7/2';
+    let isAdmin = false;
+
+    async function fetchWeather() {
+        const tempEl = document.getElementById('weather-temp');
+        const descEl = document.getElementById('weather-desc');
+        const iconEl = document.getElementById('weather-icon');
+        const cityEl = document.getElementById('weather-city');
+        
+        let lat = 48.1486; let lon = 17.1077;
+        if (currentDay === '7/2') {
+            cityEl.innerText = "台北桃園 (出發機場) 即時天氣"; lat = 25.0797; lon = 121.2342;
+        } else {
+            cityEl.innerText = "Bratislava (斯洛伐克會場) 即時天氣"; lat = 48.1486; lon = 17.1077;
+        }
+        try {
+            const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+            const data = await res.json();
+            if (data && data.current_weather) {
+                const temp = Math.round(data.current_weather.temperature);
+                const code = data.current_weather.weathercode;
+                tempEl.innerText = `${temp}°C`;
+                if (code === 0) { descEl.innerText = "晴朗無雲"; iconEl.innerHTML = '<i class="fa-solid fa-sun" style="color:#F1C40F;"></i>'; }
+                else if (code <= 3) { descEl.innerText = "多雲時晴"; iconEl.innerHTML = '<i class="fa-solid fa-cloud-sun" style="color:#ECEFF1;"></i>'; }
+                else { descEl.innerText = "陰天/陣雨"; iconEl.innerHTML = '<i class="fa-solid fa-cloud" style="color:#95A5A6;"></i>'; }
+            }
+        } catch (e) {
+            tempEl.innerText = "22°C"; descEl.innerText = "快取/離線模式運行中"; iconEl.innerHTML = '<i class="fa-solid fa-cloud-sun"></i>';
+        }
+    }
+
+    function toggleAdminMode() {
+        isAdmin = !isAdmin;
+        const container = document.getElementById('mainContainer');
+        const btnText = document.getElementById('adminBtnText');
+        if (isAdmin) {
+            container.classList.add('admin-mode-active'); btnText.innerText = '完成並鎖定';
+        } else {
+            container.classList.remove('admin-mode-active'); btnText.innerText = '管理後台'; renderAll();
+        }
+    }
+
+    function renderAll() {
+        renderItinerary(); renderInfo(); renderLuggage(); renderFood(); renderBudget(); fetchWeather();
+    }
+
+    function renderItinerary() {
+        const container = document.getElementById('itinerary-cards-container'); container.innerHTML = '';
+        let hasCard = false;
+        itineraryData.forEach((item, index) => {
+            if (item.day !== currentDay) return;
+            hasCard = true;
+            const card = document.createElement('div'); card.className = 'card';
+            card.innerHTML = `
+                <div class="view-field">
+                    <div class="card-header"><span class="card-time">${item.time}</span></div>
+                    <div class="card-title">${item.title}</div>
+                    <div class="card-meta">${item.desc}</div>
+                    ${item.nav ? `<a href="https://maps.google.com/?q=${encodeURIComponent(item.nav)}" target="_blank" class="btn-nav"><i class="fa-solid fa-location-dot"></i> 地圖導航</a>` : ''}
+                </div>
+                <input class="admin-input" type="text" value="${item.time}" onchange="updateIti(${index}, 'time', this.value)">
+                <input class="admin-input" type="text" value="${item.title}" onchange="updateIti(${index}, 'title', this.value)">
+                <textarea class="admin-textarea" onchange="updateIti(${index}, 'desc', this.value)">${item.desc}</textarea>
+                <input class="admin-input" type="text" value="${item.nav}" placeholder="導航目標地址" onchange="updateIti(${index}, 'nav', this.value)">
+                <button class="admin-delete-btn" onclick="deleteIti(${index})">刪除此行程</button>
+            `;
+            container.appendChild(card);
+        });
+        if(!hasCard) {
+            container.innerHTML = `<div class="card view-field" style="text-align:center; color:var(--text-sub); padding:30px 10px;">本日行程空缺。</div>`;
+        }
+    }
+
+    function renderInfo() {
+        document.getElementById('info-flight-view').innerText = infoData.flight;
+        document.getElementById('info-flight-edit').value = infoData.flight;
+        document.getElementById('info-stay-view').innerText = infoData.stay;
+        document.getElementById('info-stay-edit').value = infoData.stay;
+        document.getElementById('info-life-view').innerText = infoData.life;
+        document.getElementById('info-life-edit').value = infoData.life;
+    }
+
+    function saveInfoData(key) {
+        infoData[key] = document.getElementById(`info-${key}-edit`).value;
+        localStorage.setItem('ics_v2_info', JSON.stringify(infoData));
+    }
+
+    function renderLuggage() {
+        const container = document.getElementById('luggage-container');
+        if(container.innerHTML !== '') return;
+        for (let cat in luggageData) {
+            const title = document.createElement('div'); title.className = 'luggage-cat'; title.innerHTML = `<i class="fa-solid fa-clipboard-check" style="color:var(--accent-blue)"></i> ${cat}`;
+            container.appendChild(title);
+            luggageData[cat].forEach(item => {
+                const div = document.createElement('div'); div.className = 'luggage-item';
+                div.innerHTML = `<input type="checkbox" class="luggage-checkbox"> <span>${item}</span>`;
+                container.appendChild(div);
+            });
+        }
+    }
+
+    function renderFood() {
+        const container = document.getElementById('food-cards-container'); container.innerHTML = '';
+        foodData.forEach((item) => {
+            const card = document.createElement('div'); card.className = 'card';
+            card.innerHTML = `
+                <div class="view-field">
+                    <div class="card-title">${item.title}</div>
+                    <div class="card-meta">${item.desc}</div>
+                    <div style="margin-top:6px;"><span class="card-time" style="background:#FEF9E7; color:#B7950B;">${item.tag1}</span></div>
+                    ${item.nav ? `<a href="https://maps.google.com/?q=${encodeURIComponent(item.nav)}" target="_blank" class="btn-nav"><i class="fa-solid fa-utensils"></i> 地圖導航</a>` : ''}
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function updateIti(i, f, v) { itineraryData[i][f] = v; localStorage.setItem('ics_v2_iti', JSON.stringify(itineraryData)); }
+    function deleteIti(i) { itineraryData.splice(i, 1); localStorage.setItem('ics_v2_iti', JSON.stringify(itineraryData)); renderItinerary(); }
+    function addItineraryCard() { itineraryData.push({ day: currentDay, time: '12:00', title: '新增行程活動', desc: '請輸入細節描述', nav: '' }); localStorage.setItem('ics_v2_iti', JSON.stringify(itineraryData)); renderItinerary(); }
+
+    function getExchangeRates() {
+        return {
+            EUR: 1.0,
+            TWD: 1.0 / parseFloat(document.getElementById('rate-twd').value || 35.5),
+            KRW: 1.0 / parseFloat(document.getElementById('rate-krw').value || 1450),
+            USD: 1.0 / parseFloat(document.getElementById('rate-usd').value || 1.08)
+        };
+    }
+
+    function renderBudget() {
+        const tagContainer = document.getElementById('user-tags'); tagContainer.innerHTML = '';
+        userList.forEach((user, index) => {
+            const tag = document.createElement('span'); tag.className = 'user-tag';
+            tag.innerHTML = `${user} <i class="fa-solid fa-circle-xmark" onclick="removeUser(${index})"></i>`;
+            tagContainer.appendChild(tag);
+        });
+
+        const payerSelect = document.getElementById('bill-payer'); payerSelect.innerHTML = '';
+        const targetsBox = document.getElementById('bill-targets'); targetsBox.innerHTML = '';
+
+        userList.forEach(user => {
+            let opt = document.createElement('option'); opt.value = user; opt.innerText = user; payerSelect.appendChild(opt);
+            targetsBox.innerHTML += `<label style="display:flex; align-items:center; gap:4px; font-size:0.8rem;"><input type="checkbox" name="split-user" value="${user}" checked> ${user}</label>`;
+        });
+
+        const rates = getExchangeRates();
+        const historyEl = document.getElementById('bill-history-list'); historyEl.innerHTML = '';
+        let totalSumEUR = 0;
+
+        billList.forEach((bill, idx) => {
+            const amountInEUR = bill.amount * (rates[bill.currency] || 1);
+            totalSumEUR += amountInEUR;
+            historyEl.innerHTML += `
+                <div style="padding:8px 0; border-bottom:1px dashed #DDD; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <b>[${bill.payer} 代付]</b> ${bill.purpose} <br>
+                        <span style="color:var(--accent-orange); font-weight:bold;">${bill.amount} ${bill.currency}</span> 
+                        <span style="font-size:0.75rem; color:var(--text-sub);">(折合 €${amountInEUR.toFixed(2)})</span>
+                    </div>
+                    <i class="fa-solid fa-trash-can" style="color:#C0392B; cursor:pointer;" onclick="deleteBill(${idx})"></i>
+                </div>`;
+        });
+        document.getElementById('bill-total-box').innerText = `總支出折合：€ ${totalSumEUR.toFixed(2)} EUR`;
+        calculateDebts(rates);
+    }
+
+    function addUser() {
+        const name = document.getElementById('new-user-name').value.trim(); if(!name) return;
+        userList.push(name); localStorage.setItem('ics_v2_users', JSON.stringify(userList));
+        document.getElementById('new-user-name').value = ''; renderBudget();
+    }
+    function removeUser(index) { userList.splice(index, 1); localStorage.setItem('ics_v2_users', JSON.stringify(userList)); renderBudget(); }
+
+    function addBill() {
+        const purpose = document.getElementById('bill-purpose').value.trim();
+        const amount = parseFloat(document.getElementById('bill-amount').value);
+        const currency = document.getElementById('bill-currency').value;
+        const payer = document.getElementById('bill-payer').value;
+        if (!purpose || isNaN(amount) || amount <= 0) return alert('請填寫完整金額');
+
+        const checkboxes = document.querySelectorAll('input[name="split-user"]:checked');
+        let targets = []; checkboxes.forEach(cb => targets.push(cb.value));
+        if(targets.length === 0) return alert('請勾選分攤成員');
+
+        billList.push({ purpose, amount, currency, payer, targets });
+        localStorage.setItem('ics_v2_bills', JSON.stringify(billList));
+        document.getElementById('bill-purpose').value = ''; document.getElementById('bill-amount').value = '';
+        renderBudget();
+    }
+    function deleteBill(index) { billList.splice(index, 1); localStorage.setItem('ics_v2_bills', JSON.stringify(billList)); renderBudget(); }
+
+    function calculateDebts(rates) {
+        const reportBox = document.getElementById('debt-report-box');
+        if (userList.length === 0) { reportBox.innerText = '成員為空'; return; }
+        let netBalances = {}; userList.forEach(u => netBalances[u] = 0);
+
+        billList.forEach(bill => {
+            const amountInEUR = bill.amount * (rates[bill.currency] || 1);
+            const perShare = amountInEUR / bill.targets.length;
+            if (netBalances[bill.payer] !== undefined) netBalances[bill.payer] += amountInEUR;
+            bill.targets.forEach(s => { if (netBalances[s] !== undefined) netBalances[s] -= perShare; });
+        });
+
+        let creditors = [], debtors = [];
+        for (let user in netBalances) {
+            if (netBalances[user] > 0.01) creditors.push({ name: user, amount: netBalances[user] });
+            else if (netBalances[user] < -0.01) debtors.push({ name: user, amount: Math.abs(netBalances[user]) });
+        }
+
+        let resultHtml = "", cIdx = 0, dIdx = 0;
+        while (cIdx < creditors.length && dIdx < debtors.length) {
+            let creditor = creditors[cIdx], debtor = debtors[dIdx];
+            let settleAmount = Math.min(creditor.amount, debtor.amount);
+            resultHtml += `
+                <div style="margin-bottom:8px;">
+                    <b>${debtor.name}</b> 應給付給 <b>${creditor.name}</b>：<br>
+                    <span style="color:#C0392B; font-weight:bold; margin-left:4px;">€ ${settleAmount.toFixed(2)} EUR</span>
+                    <span style="font-size:0.75rem; color:var(--text-sub);">(約 NT$ ${(settleAmount * parseFloat(document.getElementById('rate-twd').value)).toFixed(0)} 元)</span>
+                </div>`;
+            creditor.amount -= settleAmount; debtor.amount -= settleAmount;
+            if (creditor.amount <= 0.01) cIdx++; if (debtor.amount <= 0.01) dIdx++;
+        }
+        reportBox.innerHTML = resultHtml || '<div style="color:var(--accent-green); font-weight:bold;"><i class="fa-solid fa-circle-check"></i> 帳目已均攤平衡！</div>';
+    }
+
+    function switchTab(tabId, el) {
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        el.classList.add('active');
+        document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+        document.getElementById('sec-' + tabId).classList.add('active');
+        document.getElementById('dayScroller').style.display = (tabId === 'itinerary') ? 'flex' : 'none';
+        if(tabId === 'itinerary') fetchWeather();
+    }
+
+    function switchDay(dayId) {
+        currentDay = dayId;
+        document.querySelectorAll('.day-badge').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        renderItinerary(); fetchWeather();
+    }
+
+    renderAll();
+</script>
+</body>
+</html>
