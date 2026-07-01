@@ -5,13 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ICS 歐洲行隨身助手</title>
     
+    <!-- PWA 核心 Meta 標籤：引導手機進入全螢幕模式 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="ICS助手">
     <meta name="theme-color" content="#2C3E50">
     
+    <!-- 資料網址型 Manifest 注入 (消除外部 json 依賴) -->
     <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22ICS%20%E6%AD%90%E6%B4%B2%E8%A1%8C%E9%9A%A8%E8%BA%AB%E5%8A%A9%E6%89%8B%22%2C%22short_name%22%3A%22ICS%E5%8A%A9%E6%89%8B%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F4F6F8%22%2C%22theme_color%22%3A%22%232C3E50%22%2C%22orientation%22%3A%22portrait%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Butf8%2C%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20512%20512%27%3E%3Crect%20width%3D%27512%27%20height%3D%27512%27%20rx%3D%27100%27%20fill%3D%27%233498DB%27%2F%3E%3Cpath%20d%3D%27M256%20100%20L380%20380%20L132%20380%20Z%27%20fill%3D%27%23FFF%27%2F%3E%3C%2Fsvg%3E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
     
+    <!-- 蘋果裝置 App 圖示 -->
     <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%233498DB'/><path d='M256 100 L380 380 L132 380 Z' fill='%23FFF'/></svg>">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -141,6 +144,7 @@
         <div class="day-badge" onclick="switchDay('7/12')">7/12 (日)</div>
     </div>
 
+    <!-- TAB 1: 每日行程 -->
     <div id="sec-itinerary" class="content-section active">
         <div class="weather-banner view-field">
             <div>
@@ -156,6 +160,7 @@
         <button class="btn-add-card" onclick="addItineraryCard()">+ 在當天新增自訂行程</button>
     </div>
 
+    <!-- TAB 2: 重要資訊 -->
     <div id="sec-info" class="content-section">
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-plane-departure"></i> 航班訊息與轉機備忘</div>
@@ -174,24 +179,29 @@
         </div>
     </div>
 
+    <!-- TAB 3: 行李清單 -->
     <div id="sec-luggage" class="content-section">
         <div class="card" style="background:#EBF5FB; border-color:#AED6F1; font-size:0.8rem; color:#2C3E50;">
-            <i class="fa-solid fa-circle-info"></i> <b>隨身行李重要限制：</b><br>行動電源必須有明確 Wh 標示，最多攜帶兩顆，且須用密封袋加絕緣膠帶單獨包裝放置於隨身行李，不可託運。
+            <i class="fa-solid fa-circle-info"></i> <b>重要限制與叮嚀：</b><br>
+            1. 行動電源須隨身攜帶、標示清楚 Wh，限帶兩顆。<br>
+            2. 液體/膠狀備品帶上飛機每瓶限 100ml 內，須統一裝入 1 公升透明夾鏈袋。
         </div>
         <div id="luggage-container"></div>
     </div>
 
+    <!-- TAB 4: 精選美食 -->
     <div id="sec-food" class="content-section">
         <div id="food-cards-container"></div>
         <button class="btn-add-card" onclick="addFoodCard()">+ 新增美食餐廳</button>
     </div>
 
+    <!-- TAB 5: 預算分帳 -->
     <div id="sec-budget" class="content-section">
         <div class="card" style="border-left: 4px solid var(--accent-orange);">
             <div class="card-title" style="font-size:0.9rem;"><i class="fa-solid fa-money-bill-trend-up"></i> 匯率基準設定 (折算為歐元 EUR)</div>
             <div class="rate-grid">
                 <div class="rate-box">1 EUR 兌台幣<input type="number" id="rate-twd" value="35.5" step="0.1" oninput="renderBudget()"></div>
-                <div class="rate-box">1 EUR 兌韓元<input type="number" id="rate-krw" value="1450" step="10" oninput="renderBudget()"></div>
+                <div class="rate-box">1 EUR 兌慢幣<input type="number" id="rate-krw" value="1450" step="10" oninput="renderBudget()"></div>
                 <div class="rate-box">1 EUR 兌美金<input type="number" id="rate-usd" value="1.08" step="0.01" oninput="renderBudget()"></div>
             </div>
         </div>
@@ -199,7 +209,7 @@
         <div class="card">
             <div class="card-title"><i class="fa-solid fa-users"></i> 1. 成員名單管理</div>
             <div class="bill-input-group">
-                <input type="text" id="new-user-name" class="admin-input" style="display:block;" placeholder="請輸入成員名字 (如：賴教授)">
+                <input type="text" id="new-user-name" class="admin-input" style="display:block;" placeholder="請輸入成員名字">
                 <button class="bill-btn" onclick="addUser()">添加</button>
             </div>
             <div class="user-tag-container" id="user-tags"></div>
@@ -238,6 +248,7 @@
         </div>
     </div>
 
+    <!-- 底部導覽 -->
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="switchTab('itinerary', this)">
             <i class="fa-solid fa-calendar-days"></i><span>行程助手</span>
@@ -262,7 +273,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             const swCode = `
-                const CACHE_NAME = 'ics-v2-cache-2026';
+                const CACHE_NAME = 'ics-v3-cache-2026';
                 const urlsToCache = [location.href, 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'];
                 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(urlsToCache))); });
                 self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match(location.href)))); });
@@ -272,12 +283,12 @@
         });
     }
 
-    // 原始核心行程與清單數據庫
+    // 原始核心行程數據庫
     const defaultItinerary = [
         { day: '7/2', time: '14:00', title: '前往桃機第一航廈', desc: '交通方式: 包車 | 車程時間: 2小時', nav: '' },
         { day: '7/2', time: '16:00', title: '抵達桃機第一航廈辦理登機', desc: '備註: 韓國 e-Arrival Card 請於入境前 72 小時內填寫完成。', nav: '' },
         { day: '7/2', time: '18:55', title: '大韓航空 KE 2028 起飛', desc: '台北桃園 (TPE) T1 → 首爾仁川 (ICN) T2\n航行時間：2小時40分鐘，附晚餐。', nav: '' },
-        { day: '7/2', time: '22:55', title: '抵達首爾仁川第二航廈', desc: '備註: 完成入境手續，並辦理 SeS 自動通關。夜間於機場內休息(汗蒸幕)。', nav: '' },
+        { day: '7/2', time: '22:55', title: '抵達首爾仁川第二航廈', desc: '備註: 完成入境手續，並辦理 SeS 自動通關。夜間於機場內休息(過境旅館/汗蒸幕)。', nav: '' },
         { day: '7/3', time: '08:40', title: '首爾仁川第二航廈辦理再次報到', desc: '開啟 ICN Smart Pass App 登錄登機證，刷臉快速通關。', nav: '' },
         { day: '7/3', time: '10:40', title: '大韓航空 KE 0937 起飛', desc: '首爾仁川 (ICN) T2 → 維也納 (VIE) T3\n航行時間：12小時40分鐘，附午餐與晚餐。', nav: '' },
         { day: '7/3', time: '16:20', title: '抵達維也納第三航廈', desc: '備註: 完成護照查驗，並辦理 EES 歐洲入出境系統登錄。', nav: '' },
@@ -301,10 +312,13 @@
         life: `⚡ 歐洲生活實用備忘：\n- 斯洛伐克電壓：230V / 50Hz (歐規雙圓孔插座)\n- 韓國電壓：220V / 60Hz (韓規雙圓孔插座)\n- 飲水提示：斯洛伐克自來生水可直接飲用。\n- 韓國退稅門檻：滿 ₩15,000 可辦理退稅。\n- 歐洲緊急救難電話：112\n- 駐斯洛伐克台北代表處：+421-2-5825-3220`
     };
 
+    // 全新擴充的行李清單（包含衣物與保養備品）
     const luggageData = {
-        '重要文件': ['護照正本 + 電子檔 + 影本 (效期>6個月)', '韓國 e-Arrival Card 填寫檔案', '完成 ICN Smart Pass App 資料登錄', '機票確認單電子檔', '飯店訂房確認單', '英文旅行保險證明單', '身分證、健保卡', '信用卡、歐元現金、韓幣現金、少量台幣', '歐洲上網卡/SIM卡/取卡針', 'Flixbus 巴士確認單', '大會學術發表海報'],
-        '3C電子設備': ['手機', '行動電源 (必須帶隨身、有Wh標示)', '耳機、藍芽耳機', '各大充電線、高速充電器', '萬國轉接插頭 (歐規圓孔)', '平板電腦/電子書閱讀器', '輕便延長線', '相機、記憶卡、相機充電器'],
-        '個人常備藥品': ['個人私用常備藥', '普拿疼 (解熱鎮痛)', '暈車藥/暈船藥', '感冒藥/綜合維他命', '腸胃藥/益生菌', '護眼藥水', 'OK蹦/外傷消毒藥膏', '棉花棒、牙籤']
+        '重要文件與學術設備': ['護照正本 + 電子檔 + 影本 (效期>6個月)', '韓國 e-Arrival Card 填寫檔案', '完成 ICN Smart Pass App 資料登錄', '機票確認單電子檔', '飯店訂房確認單', '英文旅行保險證明單', '身分證、健保卡', '信用卡、歐元現金、韓幣現金、少量台幣', '歐洲上網卡/SIM卡/取卡針', 'Flixbus 巴士確認單', '大會學術發表海報 (重要！)', '簡報備份隨身碟 (多處備份)'],
+        '正式與休閒衣物 (7/2 - 7/12)': ['🎤 Oral Presentation 上台套裝/正裝 (襯衫/西褲/皮鞋/套裝)', '舒適長途搭機服裝 1 套 (飛機上保暖放鬆為主)', '休閒日常換洗衣物 (短袖/長褲) 4-5 套', '防風薄外套 / 薄針織衫 (歐洲早晚涼，防溫差)', '吸汗防磨內著、襪子 6-7 套', '好走的休閒走路鞋 / 布鞋 1 雙', '室內輕便拖鞋 (歐洲部分旅館不提供)', '遮陽帽 / 太陽眼鏡'],
+        '盥洗、防曬與護膚日常備品': ['亮白煥膚精華液 / 果酸精華 (分裝小瓶)', '深層保濕乳液 / 潤膚霜 (歐洲氣候乾燥必備)', '精油保養組 (紓壓/舒緩雙腿疲勞)', '身體磨砂膏 / 去角質備品 (維持肌膚透亮)', '高防曬係數防曬乳 (歐洲夏季紫外線強)', '溫和洗面乳、卸妝備品', '旅行盥洗組 (洗髮精/沐浴乳/牙刷/牙膏)', '高效保濕面膜 3-4 片 (急救肌膚乾燥)'],
+        '3C電子設備': ['手機、平板電腦/筆電', '行動電源 (必須帶隨身、有Wh標示)', '耳機、藍芽耳機', '各式充電線、多孔高速充電器', '萬國轉接插頭 (歐規雙圓孔/韓規)', '輕便延長線'],
+        '個人常備藥品': ['個人私用常備藥', '普拿疼 (解熱鎮痛)', '過敏藥/抗組織胺', '暈車藥/暈船藥', '腸胃藥/益生菌/水土不服藥', '人工淚液/護眼藥水', 'OK蹦/外傷消毒藥膏']
     };
 
     const defaultFood = [
@@ -406,16 +420,23 @@
 
     function renderLuggage() {
         const container = document.getElementById('luggage-container');
-        if(container.innerHTML !== '') return;
+        container.innerHTML = ''; // 每次切換重新渲染確保數據是最新的
         for (let cat in luggageData) {
             const title = document.createElement('div'); title.className = 'luggage-cat'; title.innerHTML = `<i class="fa-solid fa-clipboard-check" style="color:var(--accent-blue)"></i> ${cat}`;
             container.appendChild(title);
-            luggageData[cat].forEach(item => {
+            luggageData[cat].forEach((item, index) => {
                 const div = document.createElement('div'); div.className = 'luggage-item';
-                div.innerHTML = `<input type="checkbox" class="luggage-checkbox"> <span>${item}</span>`;
+                // 產生獨一無二的快取 Key 保持勾選狀態
+                const cacheKey = `luggage_${cat}_${index}`;
+                const isChecked = localStorage.getItem(cacheKey) === 'true' ? 'checked' : '';
+                div.innerHTML = `<input type="checkbox" class="luggage-checkbox" ${isChecked} onchange="saveLuggageState('${cacheKey}', this.checked)"> <span>${item}</span>`;
                 container.appendChild(div);
             });
         }
+    }
+
+    function saveLuggageState(key, isChecked) {
+        localStorage.setItem(key, isChecked);
     }
 
     function renderFood() {
